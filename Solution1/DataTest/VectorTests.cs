@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TP.ConcurrentProgramming.Data.Models;
-
 
 namespace TP.ConcurrentProgramming.DataTest
 {
@@ -12,24 +7,24 @@ namespace TP.ConcurrentProgramming.DataTest
     public class VectorTests
     {
         [TestMethod]
-        public void Vector_ShouldStoreAndUpdateCoordinates()
+        public void Vector_ShouldStoreConstructorValues()
         {
             Vector vector = new Vector(1, 2);
 
             Assert.AreEqual(1, vector.X);
             Assert.AreEqual(2, vector.Y);
+        }
+
+        [TestMethod]
+        public void Vector_ShouldUpdateCoordinates()
+        {
+            Vector vector = new Vector(1, 2);
 
             vector.X = 3;
             vector.Y = 4;
 
             Assert.AreEqual(3, vector.X);
             Assert.AreEqual(4, vector.Y);
-
-
-
-
-
-
         }
     }
 }

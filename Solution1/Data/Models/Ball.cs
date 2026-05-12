@@ -23,9 +23,9 @@ namespace TP.ConcurrentProgramming.Data.Models
             }
 
             Diameter = diameter;
-            Mass = CalculateMass(diameter);
             Position = position;
             Velocity = velocity;
+            Mass = CalculateMass(diameter);
         }
 
         private static double CalculateMass(double diameter) 

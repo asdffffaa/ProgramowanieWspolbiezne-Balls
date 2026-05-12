@@ -1,51 +1,43 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TP.ConcurrentProgramming.BusinessLogic.Abstractions;
 using TP.ConcurrentProgramming.Data.Abstractions;
-using TP.ConcurrentProgramming.Data.Models;
 
 namespace TP.ConcurrentProgramming.BusinessLogic.Services
 {
     public class LogicApi : ILogicApi
     {
-        private readonly IBallRepository _ballRepository;
+        private readonly IDataApi _dataApi;
         private readonly Random _random = new Random();
         private readonly object _lock = new object();
 
         public event Action? BallsUpdated;
 
-        public LogicApi(IBallRepository ballRepository)
+        public LogicApi(IDataApi dataApi)
         {
-            _ballRepository = ballRepository;
+            _dataApi = dataApi;
         }
 
         public IReadOnlyList<IBall> GetBalls()
         {
             lock (_lock)
             {
-                return _ballRepository.GetAll();
+                return _dataApi.GetAll();
             }
         }
-
 
         public void CreateBalls(int count, double areaWidth, double areaHeight)
         {
             lock (_lock)
             {
-                _ballRepository.Clear();
-
+                _dataApi.Clear();
 
                 for (int i = 0; i < count; i++)
                 {
-                    // double mass = _random.Next(10,20);
-                    double diameter = _random.Next(10,50);
+                    double diameter = _random.Next(20, 50);
 
                     double x = _random.NextDouble() * (areaWidth - diameter);
                     double y = _random.NextDouble() * (areaHeight - diameter);
-
 
                     double vx;
                     double vy;
@@ -54,25 +46,29 @@ namespace TP.ConcurrentProgramming.BusinessLogic.Services
                     {
                         vx = _random.NextDouble() * 6 - 3;
                         vy = _random.NextDouble() * 6 - 3;
-                    } while (vx == 0 && vy == 0);
+                    }
+                    while (vx == 0 && vy == 0);
 
-                    IBall ball = new Ball(diameter, new Position(x, y), new Vector(vx, vy));
+                    IBall ball = _dataApi.CreateBall(
+                        diameter,
+                        x,
+                        y,
+                        vx,
+                        vy
+                    );
 
-                    _ballRepository.Add(ball);
-
+                    _dataApi.Add(ball);
                 }
-
             }
 
             BallsUpdated?.Invoke();
-
         }
 
         public void UpdateBalls(double areaWidth, double areaHeight)
         {
             lock (_lock)
             {
-                foreach (IBall ball in _ballRepository.GetAll())
+                foreach (IBall ball in _dataApi.GetAll())
                 {
                     double newX = ball.Position.X + ball.Velocity.X;
                     double newY = ball.Position.Y + ball.Velocity.Y;
@@ -93,7 +89,6 @@ namespace TP.ConcurrentProgramming.BusinessLogic.Services
                         newY = 0;
                         ball.Velocity.Y = -ball.Velocity.Y;
                     }
-
                     else if (newY + ball.Diameter > areaHeight)
                     {
                         newY = areaHeight - ball.Diameter;
@@ -105,7 +100,6 @@ namespace TP.ConcurrentProgramming.BusinessLogic.Services
                 }
 
                 ResolveBallCollisions();
-
             }
 
             BallsUpdated?.Invoke();
@@ -113,7 +107,7 @@ namespace TP.ConcurrentProgramming.BusinessLogic.Services
 
         private void ResolveBallCollisions()
         {
-            IReadOnlyList<IBall> balls = _ballRepository.GetAll();
+            IReadOnlyList<IBall> balls = _dataApi.GetAll();
 
             for (int i = 0; i < balls.Count; i++)
             {
@@ -143,7 +137,6 @@ namespace TP.ConcurrentProgramming.BusinessLogic.Services
 
             double distanceSquared = deltaX * deltaX + deltaY * deltaY;
             double minimumDistance = firstRadius + secondRadius;
-
             double minimumDistanceSquared = minimumDistance * minimumDistance;
 
             if (distanceSquared > minimumDistanceSquared)
@@ -158,7 +151,6 @@ namespace TP.ConcurrentProgramming.BusinessLogic.Services
                 distance = 0.01;
                 deltaX = 0.01;
                 deltaY = 0;
-
             }
 
             double normalX = deltaX / distance;
@@ -167,12 +159,20 @@ namespace TP.ConcurrentProgramming.BusinessLogic.Services
             double relativeVelocityX = firstBall.Velocity.X - secondBall.Velocity.X;
             double relativeVelocityY = firstBall.Velocity.Y - secondBall.Velocity.Y;
 
-
-            double velocityAlongNormal = relativeVelocityX * normalX + relativeVelocityY * normalY;
+            double velocityAlongNormal =
+                relativeVelocityX * normalX +
+                relativeVelocityY * normalY;
 
             if (velocityAlongNormal <= 0)
             {
-                SeparateBalls(firstBall, secondBall, normalX, normalY, minimumDistance - distance);
+                SeparateBalls(
+                    firstBall,
+                    secondBall,
+                    normalX,
+                    normalY,
+                    minimumDistance - distance
+                );
+
                 return;
             }
 
@@ -187,39 +187,40 @@ namespace TP.ConcurrentProgramming.BusinessLogic.Services
             secondBall.Velocity.X += impulse * firstMass * normalX;
             secondBall.Velocity.Y += impulse * firstMass * normalY;
 
-            SeparateBalls(firstBall, secondBall, normalX, normalY, minimumDistance - distance);
-
-
+            SeparateBalls(
+                firstBall,
+                secondBall,
+                normalX,
+                normalY,
+                minimumDistance - distance
+            );
         }
 
-        private void SeparateBalls(IBall firstBall, IBall secondBall, double normalX, double normalY, double overlap)
+        private void SeparateBalls(
+            IBall firstBall,
+            IBall secondBall,
+            double normalX,
+            double normalY,
+            double overlap
+        )
         {
+            if (overlap <= 0)
             {
-                if (overlap <= 0)
-                {
-                    return;
-                }
-
-                double firstMass = firstBall.Mass;
-                double secondMass = secondBall.Mass;
-                double totalMass = firstMass + secondMass;
-
-                double firstMoveRatio = secondMass / totalMass;
-                double secondMoveRatio = firstMass / totalMass;
-
-
-                firstBall.Position.X -= normalX * overlap * firstMoveRatio;
-                firstBall.Position.Y -= normalY * overlap * firstMoveRatio;
-
-                secondBall.Position.X += normalX * overlap * secondMoveRatio;
-                secondBall.Position.Y += normalY * overlap * secondMoveRatio;
-
+                return;
             }
 
+            double firstMass = firstBall.Mass;
+            double secondMass = secondBall.Mass;
+            double totalMass = firstMass + secondMass;
 
+            double firstMoveRatio = secondMass / totalMass;
+            double secondMoveRatio = firstMass / totalMass;
 
+            firstBall.Position.X -= normalX * overlap * firstMoveRatio;
+            firstBall.Position.Y -= normalY * overlap * firstMoveRatio;
 
+            secondBall.Position.X += normalX * overlap * secondMoveRatio;
+            secondBall.Position.Y += normalY * overlap * secondMoveRatio;
         }
-
     }
 }

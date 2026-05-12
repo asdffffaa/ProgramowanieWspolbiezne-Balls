@@ -14,7 +14,8 @@ namespace TP.ConcurrentProgramming.PresentationView
             base.OnStartup(e);
 
             IBallRepository repository = new BallRepository();
-            ILogicApi logicApi = new LogicApi(repository);
+            IDataApi dataApi = new DataApi(repository);
+            ILogicApi logicApi = new LogicApi(dataApi);
             MainWindowViewModel viewModel = new MainWindowViewModel(logicApi);
 
             MainWindow mainWindow = new MainWindow(viewModel);

@@ -11,9 +11,12 @@ namespace TP.ConcurrentProgramming.PresentationViewModel.ViewModels
     {
         private readonly ILogicApi _logicApi;
         private readonly BoardPresentationModel _boardPresentationModel;
+        private readonly SynchronizationContext? _synchronizationContext;
+
         private CancellationTokenSource? _cancellationTokenSource;
         private bool _isRunning;
         private int _ballsCount = 5;
+
         private double _boardWidth = 800;
         private double _boardHeight = 400;
 
@@ -23,53 +26,12 @@ namespace TP.ConcurrentProgramming.PresentationViewModel.ViewModels
         private double _viewBoardWidth = 800;
         private double _viewBoardHeight = 400;
 
-
-        public double LogicBoardWidth
-        {
-            get => _logicBoardWidth;
-
-            set
-            {
-                _logicBoardWidth = value;
-                OnPropertyChanged();
-            }
-        }
-
-        public double LogicBoardHeight
-        {
-            get => _logicBoardHeight;
-            set
-            {
-                _logicBoardHeight = value;
-                OnPropertyChanged();
-            }
-        }
-
-
-        public double ViewBoardWidth
-        {
-            get => _viewBoardWidth;
-            set
-            {
-                _viewBoardWidth = value;
-                OnPropertyChanged();
-            }
-        }
-
-        public double ViewBoardHeight
-        {
-            get => _viewBoardHeight;
-            set
-            {
-                _viewBoardHeight = value;
-                OnPropertyChanged();
-            }
-        }
-
         public MainWindowViewModel(ILogicApi logicApi)
         {
             _logicApi = logicApi;
             _boardPresentationModel = new BoardPresentationModel();
+
+            _synchronizationContext = SynchronizationContext.Current;
 
             _logicApi.BallsUpdated += OnBallsUpdated;
 
@@ -110,6 +72,46 @@ namespace TP.ConcurrentProgramming.PresentationViewModel.ViewModels
             }
         }
 
+        public double LogicBoardWidth
+        {
+            get => _logicBoardWidth;
+            set
+            {
+                _logicBoardWidth = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public double LogicBoardHeight
+        {
+            get => _logicBoardHeight;
+            set
+            {
+                _logicBoardHeight = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public double ViewBoardWidth
+        {
+            get => _viewBoardWidth;
+            set
+            {
+                _viewBoardWidth = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public double ViewBoardHeight
+        {
+            get => _viewBoardHeight;
+            set
+            {
+                _viewBoardHeight = value;
+                OnPropertyChanged();
+            }
+        }
+
         public ICommand CreateBallsCommand { get; }
         public ICommand StartCommand { get; }
         public ICommand StopCommand { get; }
@@ -122,7 +124,9 @@ namespace TP.ConcurrentProgramming.PresentationViewModel.ViewModels
         private void Start()
         {
             if (_isRunning)
+            {
                 return;
+            }
 
             _isRunning = true;
             RaiseCommands();
@@ -132,10 +136,16 @@ namespace TP.ConcurrentProgramming.PresentationViewModel.ViewModels
 
             Task.Run(async () =>
             {
-                while (!token.IsCancellationRequested)
+                try
                 {
-                    _logicApi.UpdateBalls(LogicBoardWidth, LogicBoardHeight);
-                    await Task.Delay(16, token);
+                    while (!token.IsCancellationRequested)
+                    {
+                        _logicApi.UpdateBalls(LogicBoardWidth, LogicBoardHeight);
+                        await Task.Delay(16, token);
+                    }
+                }
+                catch (TaskCanceledException)
+                {
                 }
             }, token);
         }
@@ -143,7 +153,9 @@ namespace TP.ConcurrentProgramming.PresentationViewModel.ViewModels
         private void Stop()
         {
             if (!_isRunning)
+            {
                 return;
+            }
 
             _cancellationTokenSource?.Cancel();
             _isRunning = false;
@@ -152,14 +164,27 @@ namespace TP.ConcurrentProgramming.PresentationViewModel.ViewModels
 
         private void OnBallsUpdated()
         {
+            if (_synchronizationContext == null)
+            {
+                UpdatePresentationModel();
+                return;
+            }
+
+            _synchronizationContext.Post(_ =>
+            {
+                UpdatePresentationModel();
+            }, null);
+        }
+
+        private void UpdatePresentationModel()
+        {
             _boardPresentationModel.UpdateFromLogic(
                 _logicApi.GetBalls(),
                 LogicBoardWidth,
                 LogicBoardHeight,
                 ViewBoardWidth,
                 ViewBoardHeight
-                );
-
+            );
         }
 
         private void RaiseCommands()
