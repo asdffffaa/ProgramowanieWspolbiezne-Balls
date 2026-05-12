@@ -16,14 +16,14 @@ namespace TP.ConcurrentProgramming.DataTest
         {
             Vector vector = new Vector(1, 2);
 
-            Assert.Equals(1, vector.X);
-            Assert.Equals(2, vector.Y);
+            Assert.AreEqual(1, vector.X);
+            Assert.AreEqual(2, vector.Y);
 
             vector.X = 3;
             vector.Y = 4;
 
-            Assert.Equals(3, vector.X);
-            Assert.Equals(4, vector.Y);
+            Assert.AreEqual(3, vector.X);
+            Assert.AreEqual(4, vector.Y);
 
 
 

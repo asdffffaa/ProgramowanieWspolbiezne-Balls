@@ -9,7 +9,10 @@ namespace TP.ConcurrentProgramming.Data.Abstractions
     public interface IBall
     {
         double Diameter {  get; }
+        double Mass { get; }
         IPosition Position { get; }
         IVector Velocity { get; }
+
+
     }
 }

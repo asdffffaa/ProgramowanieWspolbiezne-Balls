@@ -71,6 +71,8 @@ namespace TP.ConcurrentProgramming.BusinessLogicTest
             Assert.AreEqual(103, ball.Position.Y);
         }
 
+        
+
         [TestMethod]
         public void UpdateBalls_ShouldBounceFromLeftWall()
         {
@@ -86,6 +88,7 @@ namespace TP.ConcurrentProgramming.BusinessLogicTest
             Assert.AreEqual(5, ball.Velocity.X);
         }
 
+       /
         [TestMethod]
         public void UpdateBalls_ShouldBounceFromRightWall()
         {

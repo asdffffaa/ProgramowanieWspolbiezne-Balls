@@ -17,9 +17,9 @@ namespace TP.ConcurrentProgramming.DataTest
             Vector vector = new Vector(2, 3);
             Ball ball = new Ball(20, position, vector);
 
-            Assert.Equals(20, ball.Diameter);
-            Assert.Equals(position, ball.Position);
-            Assert.Equals(vector, ball.Velocity);
+            Assert.AreEqual(20, ball.Diameter);
+            Assert.AreSame(position, ball.Position);
+            Assert.AreSame(vector, ball.Velocity);
         }
     }
 }

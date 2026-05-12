@@ -11,21 +11,32 @@ namespace TP.ConcurrentProgramming.Data.Models
     {
         private readonly List<IBall> _balls = new List<IBall>(); // можно использовать только внутри BallRepository
         // _balls = new List<IBall>();
+        private readonly object _lock = new object();
 
         public IReadOnlyList<IBall> GetAll()
         {
-            return _balls.AsReadOnly();
+            lock (_lock)
+            {
+                return _balls.ToList().AsReadOnly();
+            }
         }
 
         public void Add(IBall ball)
         {
-            _balls.Add(ball);
+            lock(_lock)
+            {
+                _balls.Add(ball);
+            }
         }
 
         public void Clear()
         {
-            _balls.Clear();
+            lock (_lock)
+            {
+                _balls.Clear();
+            }
         }
+
 
     }
 }

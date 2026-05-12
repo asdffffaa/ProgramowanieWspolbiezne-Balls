@@ -16,22 +16,22 @@ namespace TP.ConcurrentProgramming.PresentationModel.Models
 
         public double X
         {
-            get => _x;
+            get => _x; // double currentX = ball.X;
             set
             {
                 _x = value;
                 OnPropertyChanged();
-            }
+            } // ball.X = 100;
         }
 
         public double Y
         {
-            get => _y;
+            get => _y; 
 
             set
             {
                 _y = value;
-                OnPropertyChanged();
+                OnPropertyChanged( );
             }
         }
 
