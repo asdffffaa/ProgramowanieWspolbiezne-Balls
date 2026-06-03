@@ -1,8 +1,5 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TP.ConcurrentProgramming.BusinessLogic.Abstractions;
 using TP.ConcurrentProgramming.Data.Abstractions;
 using TP.ConcurrentProgramming.Data.Models;
@@ -15,8 +12,11 @@ namespace TP.ConcurrentProgramming.PresentationViewModelTest
 
         public event Action? BallsUpdated;
 
+        public bool IsRunning { get; private set; }
         public int CreateBallsCallCount { get; private set; }
         public int UpdateBallsCallCount { get; private set; }
+        public int StartSimulationCallCount { get; private set; }
+        public int StopSimulationCallCount { get; private set; }
 
         public IReadOnlyList<IBall> GetBalls()
         {
@@ -40,14 +40,24 @@ namespace TP.ConcurrentProgramming.PresentationViewModelTest
         {
             UpdateBallsCallCount++;
 
-            foreach (var ball in _balls)
+            foreach (IBall ball in _balls)
             {
-                ball.Position.X += ball.Velocity.X;
-                ball.Position.Y += ball.Velocity.Y;
+                ball.Move(TimeSpan.FromSeconds(1));
             }
 
             BallsUpdated?.Invoke();
         }
-    }
 
+        public void StartSimulation(double areaWidth, double areaHeight)
+        {
+            StartSimulationCallCount++;
+            IsRunning = true;
+        }
+
+        public void StopSimulation()
+        {
+            StopSimulationCallCount++;
+            IsRunning = false;
+        }
+    }
 }

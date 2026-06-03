@@ -1,5 +1,4 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
+using System.Threading;
 using System.Windows.Input;
 using TP.ConcurrentProgramming.BusinessLogic.Abstractions;
 using TP.ConcurrentProgramming.PresentationModel.Models;
@@ -13,7 +12,6 @@ namespace TP.ConcurrentProgramming.PresentationViewModel.ViewModels
         private readonly BoardPresentationModel _boardPresentationModel;
         private readonly SynchronizationContext? _synchronizationContext;
 
-        private CancellationTokenSource? _cancellationTokenSource;
         private bool _isRunning;
         private int _ballsCount = 5;
 
@@ -128,26 +126,9 @@ namespace TP.ConcurrentProgramming.PresentationViewModel.ViewModels
                 return;
             }
 
+            _logicApi.StartSimulation(LogicBoardWidth, LogicBoardHeight);
             _isRunning = true;
             RaiseCommands();
-
-            _cancellationTokenSource = new CancellationTokenSource();
-            CancellationToken token = _cancellationTokenSource.Token;
-
-            Task.Run(async () =>
-            {
-                try
-                {
-                    while (!token.IsCancellationRequested)
-                    {
-                        _logicApi.UpdateBalls(LogicBoardWidth, LogicBoardHeight);
-                        await Task.Delay(16, token);
-                    }
-                }
-                catch (TaskCanceledException)
-                {
-                }
-            }, token);
         }
 
         private void Stop()
@@ -157,7 +138,7 @@ namespace TP.ConcurrentProgramming.PresentationViewModel.ViewModels
                 return;
             }
 
-            _cancellationTokenSource?.Cancel();
+            _logicApi.StopSimulation();
             _isRunning = false;
             RaiseCommands();
         }

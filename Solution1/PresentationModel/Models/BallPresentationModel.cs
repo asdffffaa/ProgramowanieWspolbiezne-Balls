@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace TP.ConcurrentProgramming.PresentationModel.Models
 {
@@ -16,29 +11,27 @@ namespace TP.ConcurrentProgramming.PresentationModel.Models
 
         public double X
         {
-            get => _x; // double currentX = ball.X;
+            get => _x;
             set
             {
                 _x = value;
                 OnPropertyChanged();
-            } // ball.X = 100;
+            }
         }
 
         public double Y
         {
-            get => _y; 
-
+            get => _y;
             set
             {
                 _y = value;
-                OnPropertyChanged( );
+                OnPropertyChanged();
             }
         }
 
         public double Diameter
         {
             get => _diameter;
-
             set
             {
                 _diameter = value;
@@ -46,16 +39,11 @@ namespace TP.ConcurrentProgramming.PresentationModel.Models
             }
         }
 
-    
-
         public event PropertyChangedEventHandler? PropertyChanged;
 
-        protected void OnPropertyChanged([CallerMemberName ] string propertyName = null)
+        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
-
-
-
     }
 }

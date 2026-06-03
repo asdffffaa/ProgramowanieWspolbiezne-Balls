@@ -68,6 +68,7 @@ namespace TP.ConcurrentProgramming.PresentationViewModelTest
 
             viewModel.StartCommand.Execute(null);
 
+            Assert.AreEqual(1, logicApi.StartSimulationCallCount);
             Assert.IsFalse(viewModel.StartCommand.CanExecute(null));
             Assert.IsFalse(viewModel.CreateBallsCommand.CanExecute(null));
             Assert.IsTrue(viewModel.StopCommand.CanExecute(null));
@@ -82,6 +83,7 @@ namespace TP.ConcurrentProgramming.PresentationViewModelTest
             viewModel.StartCommand.Execute(null);
             viewModel.StopCommand.Execute(null);
 
+            Assert.AreEqual(1, logicApi.StopSimulationCallCount);
             Assert.IsTrue(viewModel.StartCommand.CanExecute(null));
             Assert.IsTrue(viewModel.CreateBallsCommand.CanExecute(null));
             Assert.IsFalse(viewModel.StopCommand.CanExecute(null));

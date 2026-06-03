@@ -31,9 +31,11 @@ namespace TP.ConcurrentProgramming.PresentationModel.Models
 
             for (int i = 0; i < logicBalls.Count; i++)
             {
-                Balls[i].X = logicBalls[i].Position.X * scaleX;
-                Balls[i].Y = logicBalls[i].Position.Y * scaleY;
-                Balls[i].Diameter = logicBalls[i].Diameter * diameterScale;
+                BallSnapshot snapshot = logicBalls[i].Snapshot();
+
+                Balls[i].X = snapshot.PositionX * scaleX;
+                Balls[i].Y = snapshot.PositionY * scaleY;
+                Balls[i].Diameter = snapshot.Diameter * diameterScale;
             }
         }
     }

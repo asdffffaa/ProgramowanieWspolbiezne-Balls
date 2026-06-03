@@ -54,5 +54,30 @@ namespace TP.ConcurrentProgramming.DataTest
                 new Ball(-10, position, vector);
             });
         }
+
+        [TestMethod]
+        public void Move_ShouldUseElapsedTime()
+        {
+            Ball ball = new Ball(20, new Position(10, 15), new Vector(4, -2));
+
+            ball.Move(TimeSpan.FromSeconds(0.5));
+
+            Assert.AreEqual(12, ball.Position.X);
+            Assert.AreEqual(14, ball.Position.Y);
+        }
+
+        [TestMethod]
+        public void Snapshot_ShouldCopyPositionAndVelocityUnderBallLock()
+        {
+            Ball ball = new Ball(20, new Position(10, 15), new Vector(4, -2));
+
+            TP.ConcurrentProgramming.Data.Abstractions.BallSnapshot snapshot = ball.Snapshot();
+
+            Assert.AreEqual(ball.Id, snapshot.Id);
+            Assert.AreEqual(10, snapshot.PositionX);
+            Assert.AreEqual(15, snapshot.PositionY);
+            Assert.AreEqual(4, snapshot.VelocityX);
+            Assert.AreEqual(-2, snapshot.VelocityY);
+        }
     }
 }

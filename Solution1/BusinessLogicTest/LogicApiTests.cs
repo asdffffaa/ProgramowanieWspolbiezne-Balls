@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using TP.ConcurrentProgramming.BusinessLogic.Services;
 using TP.ConcurrentProgramming.Data.Abstractions;
 using TP.ConcurrentProgramming.Data.Models;
@@ -225,6 +226,36 @@ namespace TP.ConcurrentProgramming.BusinessLogicTest
 
             Assert.AreEqual(1, balls.Count);
             Assert.AreSame(ball, balls[0]);
+        }
+
+        [TestMethod]
+        public void UpdateBalls_ShouldUseElapsedTime()
+        {
+            LogicApi logicApi = CreateLogicApi(out IBallRepository repository);
+
+            IBall ball = new Ball(20, new Position(100, 100), new Vector(10, -20));
+            repository.Add(ball);
+
+            logicApi.UpdateBalls(800, 400, TimeSpan.FromSeconds(0.5));
+
+            Assert.AreEqual(105, ball.Position.X, Delta);
+            Assert.AreEqual(90, ball.Position.Y, Delta);
+        }
+
+        [TestMethod]
+        public async Task StartSimulation_ShouldMoveBallsInBackground()
+        {
+            LogicApi logicApi = CreateLogicApi(out IBallRepository repository);
+
+            IBall ball = new Ball(20, new Position(100, 100), new Vector(120, 0));
+            repository.Add(ball);
+
+            logicApi.StartSimulation(800, 400);
+            await Task.Delay(80);
+            logicApi.StopSimulation();
+
+            Assert.IsTrue(ball.Position.X > 100);
+            Assert.IsFalse(logicApi.IsRunning);
         }
     }
 }
