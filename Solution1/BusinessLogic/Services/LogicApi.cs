@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using TP.ConcurrentProgramming.BusinessLogic.Abstractions;
@@ -17,8 +16,11 @@ namespace TP.ConcurrentProgramming.BusinessLogic.Services
         private readonly Random _random = new Random();
         private readonly object _lock = new object();
 
-        private CancellationTokenSource? _simulationCancellationTokenSource;
-        private Task? _simulationTask;
+        private System.Timers.Timer? _simulationTimer;
+        private DateTime _previousSimulationTime;
+        private double _simulationAreaWidth;
+        private double _simulationAreaHeight;
+        private int _timerCallbackInProgress;
         private bool _isRunning;
 
         public LogicApi(IDataApi dataApi)
@@ -130,15 +132,19 @@ namespace TP.ConcurrentProgramming.BusinessLogic.Services
                 }
 
                 _isRunning = true;
-                _simulationCancellationTokenSource = new CancellationTokenSource();
-                CancellationToken token = _simulationCancellationTokenSource.Token;
-                _simulationTask = Task.Run(() => RunSimulationLoop(areaWidth, areaHeight, token), token);
+                _simulationAreaWidth = areaWidth;
+                _simulationAreaHeight = areaHeight;
+                _previousSimulationTime = DateTime.UtcNow;
+                _simulationTimer = new System.Timers.Timer(SimulationFrameTime.TotalMilliseconds);
+                _simulationTimer.AutoReset = true;
+                _simulationTimer.Elapsed += OnSimulationTimerElapsed;
+                _simulationTimer.Start();
             }
         }
 
         public void StopSimulation()
         {
-            CancellationTokenSource? tokenSource;
+            System.Timers.Timer? timer;
 
             lock (_lock)
             {
@@ -148,34 +154,52 @@ namespace TP.ConcurrentProgramming.BusinessLogic.Services
                 }
 
                 _isRunning = false;
-                tokenSource = _simulationCancellationTokenSource;
-                _simulationCancellationTokenSource = null;
+                timer = _simulationTimer;
+                _simulationTimer = null;
+                _previousSimulationTime = default;
             }
 
-            tokenSource?.Cancel();
-            tokenSource?.Dispose();
+            if (timer is not null)
+            {
+                timer.Stop();
+                timer.Elapsed -= OnSimulationTimerElapsed;
+                timer.Dispose();
+            }
         }
 
-        private async Task RunSimulationLoop(double areaWidth, double areaHeight, CancellationToken token)
+        private void OnSimulationTimerElapsed(object? sender, System.Timers.ElapsedEventArgs e)
         {
-            Stopwatch stopwatch = Stopwatch.StartNew();
-            TimeSpan previous = stopwatch.Elapsed;
+            if (Interlocked.Exchange(ref _timerCallbackInProgress, 1) == 1)
+            {
+                return;
+            }
 
             try
             {
-                while (!token.IsCancellationRequested)
+                TimeSpan elapsedTime;
+                double areaWidth;
+                double areaHeight;
+
+                lock (_lock)
                 {
-                    await Task.Delay(SimulationFrameTime, token);
+                    if (!_isRunning)
+                    {
+                        return;
+                    }
 
-                    TimeSpan current = stopwatch.Elapsed;
-                    TimeSpan elapsed = current - previous;
-                    previous = current;
+                    DateTime current = DateTime.UtcNow;
+                    elapsedTime = current - _previousSimulationTime;
+                    _previousSimulationTime = current;
 
-                    UpdateBalls(areaWidth, areaHeight, elapsed);
+                    areaWidth = _simulationAreaWidth;
+                    areaHeight = _simulationAreaHeight;
                 }
+
+                UpdateBalls(areaWidth, areaHeight, elapsedTime);
             }
-            catch (TaskCanceledException)
+            finally
             {
+                Interlocked.Exchange(ref _timerCallbackInProgress, 0);
             }
         }
 
